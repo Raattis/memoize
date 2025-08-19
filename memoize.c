@@ -33,6 +33,60 @@ end
 
 and then just run `fzf` normally to get the caching behavior. When the results get too stale, press
 `cltr-r` to re-generate the cache for the current command and working directory.
+
+My setup:
+~/.config/fish/config.fish
+```sh
+
+export FZF_DEFAULT_COMMAND='memoize.exe fdfind --hidden'
+export FZF_DEFAULT_OPTS_FILE=$HOME/mun_bin/fzf-oletus-flagit.txt
+set -u FZF_DEFAULT_OPS
+
+export C_SCRATCH_FILE=$HOME/mun_bin/c_scratch_file.sh
+
+function c
+    # Swap between two locations
+    set old_pwd $(pwd)
+    if not test -e $C_SCRATCH_FILE
+        echo "cd $old_pwd" > $C_SCRATCH_FILE
+    end
+
+    source $C_SCRATCH_FILE
+    echo "cd $old_pwd" > $C_SCRATCH_FILE
+end
+
+function fzf-result-handler
+    # Save path to clipboard (both the terminal and the normal one)
+    echo "$argv[1]" | tr -d "\n" | xsel --primary && xsel --primary --output | xsel --clipboard
+
+    # Save path to a scratch file so that `c` can swap to it
+    set absolute_path (realpath $argv[1])
+    echo "cd $absolute_path 2>/dev/null || cd $(dirname $absolute_path)" > $C_SCRATCH_FILE
+end
+
+function fz
+    # Run fzf at home
+    set old_pwd $(pwd)
+    cd ~
+    fzf
+    cd $old_pwd
+end
+```
+~/mun_bin/fzf-default-flags.txt
+```sh
+--height=~60%
+--layout=reverse
+--info=inline
+--tiebreak=pathname,length
+--exact
+--scheme=path
+--bind 'enter:execute-silent(fzf-result-handler {})+accept'
+--bind 'ctrl-e:execute-silent(xdg-open {})'
+--bind 'ctrl-r:reload(memoize.exe --reset fdfind --hidden)'
+--bind 'ctrl-o:reload-sync(memoize.exe --reset fdfind --hidden)'
+
+```
+
 */
 
 #include <assert.h>
@@ -85,9 +139,17 @@ void hash_command(const char *command, char *hash_output) {
 }
 
 void execute_command(const char *command, const char *cache_file) {
-	FILE *file = fopen(cache_file, "w");
+	char wip_file[2048];
+	strict_snprintf(wip_file, sizeof(wip_file), "%s.wip", cache_file);
+	if (access(wip_file, F_OK) != -1)
+	{
+		// If a wip file with this name already existed (from a previous run) delete it
+		remove(wip_file);
+	}
+
+	FILE *file = fopen(wip_file, "w");
 	if (!file) {
-		fprintf(stderr, "[ERROR] Failed to open cache file for writing '%s'", cache_file);
+		fprintf(stderr, "[ERROR] Failed to open wip cache file for writing '%s'", wip_file);
 		return;
 	}
 
@@ -107,6 +169,8 @@ void execute_command(const char *command, const char *cache_file) {
 
 	pclose(pipe);
 	fclose(file);
+
+	rename(wip_file, cache_file);
 }
 
 int main(int argc, char *argv[]) {
@@ -114,7 +178,7 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, "\
 Usage: %s <command>\n\
    or: %s --reset <command>\n", argv[0], argv[0]);
-		return 1;
+		return 0;
 	}
 
 	int arg_index = 1;
@@ -156,7 +220,7 @@ Usage: %s <command>\n\
 	}
 
 	if (access(cache_file, F_OK) != -1) {
-		// File cache file exists, read and print its content
+		// File cache file exists, read and print its content		
 		FILE *file = fopen(cache_file, "r");
 		if (file) {
 			char buffer[BUFFER_SIZE];
