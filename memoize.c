@@ -40,7 +40,7 @@ My setup:
 
 export FZF_DEFAULT_COMMAND='memoize.exe fdfind --hidden'
 export FZF_DEFAULT_OPTS_FILE=$HOME/mun_bin/fzf-oletus-flagit.txt
-set -u FZF_DEFAULT_OPS
+set -u FZF_DEFAULT_OPTS
 
 export C_SCRATCH_FILE=$HOME/mun_bin/c_scratch_file.sh
 
