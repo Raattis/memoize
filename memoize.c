@@ -1,93 +1,16 @@
-/*
-Usage:
-```sh
-memoize <command>
-```
-The above runs `<command>` and saves its `stdout` into `~/.memoize/history/<hash>.txt`
-where the `<hash>` is generated from the given `<command>` and the current working directory.
+#if 0 // Linux compile script
+#!/usr/bin/env bash
+//usr/bin/gcc -O3 -o"$0.exe" "$0" && "./$0.exe" ; exit $?$status
+#//usr/bin/gcc -g -o"$0.exe" "$0" && "./$0.exe" ; exit $?$status
+#endif
 
-Building:
-```sh
-gcc memoize.c -o memoize
-```
+// Windows:
+// 1. Download w64devkit, run it and navigate to this folder
+// 2. `sh ./memoize.c`
 
-Example usage with `fzf` with `fdfind`:
-```sh
-memoize fdfind --hidden | fzf
-```
-For this example to work install `fzf` and `fd-find` packages.
-
-To override the `fzf` default behavior add this to your `.bashrc`
-```sh
-export FZF_DEFAULT_COMMAND='memoize fdfind --hidden'
-export FZF_DEFAULT_OPTS="--bind 'ctrl-r:reload(memoize --reset fdfind --hidden)'"
-```
-
-or if you use `fish` to your `.config/fish/config.fish`
-```sh
-if status is-interactive
-	set -x FZF_DEFAULT_COMMAND 'memoize fdfind --hidden'
-	set -x FZF_DEFAULT_OPTS "--bind 'ctrl-r:reload(memoize --reset fdfind --hidden)'"
-end
-```
-
-and then just run `fzf` normally to get the caching behavior. When the results get too stale, press
-`cltr-r` to re-generate the cache for the current command and working directory.
-
-My setup:
-~/.config/fish/config.fish
-```sh
-
-export FZF_DEFAULT_COMMAND='memoize.exe fdfind --hidden'
-export FZF_DEFAULT_OPTS_FILE=$HOME/mun_bin/fzf-oletus-flagit.txt
-set -u FZF_DEFAULT_OPTS
-
-export C_SCRATCH_FILE=$HOME/mun_bin/c_scratch_file.sh
-
-function c
-    # Swap between two locations
-    set old_pwd $(pwd)
-    if not test -e $C_SCRATCH_FILE
-        echo "cd $old_pwd" > $C_SCRATCH_FILE
-    end
-
-    source $C_SCRATCH_FILE
-    echo "cd $old_pwd" > $C_SCRATCH_FILE
-end
-
-function fzf-result-handler
-    # Save path to clipboard (both the terminal and the normal one)
-    echo "$argv[1]" | tr -d "\n" | xsel --primary && xsel --primary --output | xsel --clipboard
-
-    # Save path to a scratch file so that `c` can swap to it
-    set absolute_path (realpath $argv[1])
-    echo "cd $absolute_path 2>/dev/null || cd $(dirname $absolute_path)" > $C_SCRATCH_FILE
-end
-
-function fz
-    # Run fzf at home
-    set old_pwd $(pwd)
-    cd ~
-    fzf
-    cd $old_pwd
-end
-```
-~/mun_bin/fzf-default-flags.txt
-```sh
---height=~60%
---layout=reverse
---info=inline
---tiebreak=pathname,length
---exact
---scheme=path
---bind 'enter:execute-silent(fzf-result-handler {})+accept'
---bind 'ctrl-e:execute-silent(xdg-open {})'
---bind 'ctrl-r:reload(memoize.exe --reset fdfind --hidden)'
---bind 'ctrl-o:reload-sync(memoize.exe --reset fdfind --hidden)'
-
-```
-
-*/
+// Linux:
+// 1. Download and unzip a raylib release to this folder so that './raylib/lib/libraylib.a' is a valid relative path
+// 2. `sh ./memoize.c`
 
 #include <assert.h>
 #include <dirent.h>
@@ -112,7 +35,7 @@ int strict_snprintf(char *buffer, size_t size, const char *format, ...) {
 }
 
 #define HASH_SIZE 32
-#define BUFFER_SIZE 1024
+#define BUFFER_SIZE (1 * 1024 * 1024)
 
 unsigned int fnv1a_hash(const char *str, int hash) {
 
@@ -189,7 +112,7 @@ Usage: %s <command>\n\
 		reset_forced = 1;
 	}
 
-	char command_input[4096];
+	char command_input[16 * 1024];
 	int command_length = 0;
 	for (int i = arg_index; i < argc; ++i)
 	{

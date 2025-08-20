@@ -1,0 +1,1 @@
+gcc -O3 memoize.c -o memoize.exe && cp ./memoize.exe ~/mun_bin/
