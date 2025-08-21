@@ -41,7 +41,7 @@ function c
     echo "cd '$old_pwd'" > $C_SCRATCH_FILE
 end
 
-export FZF_DEFAULT_COMMAND='memoize.exe fdfind --hidden'
+export FZF_DEFAULT_COMMAND='memoize fdfind --hidden'
 export FZF_DEFAULT_OPTS_FILE=$HOME/.local/fzf-default-flags.txt
 function fzf-result-handler
     # Save path to clipboard (both the terminal and the normal one)
@@ -85,7 +85,7 @@ In `~/.local/fzf-default-flags.txt`
 --scheme=path
 --bind 'enter:execute-silent(fzf-result-handler {})+accept'
 --bind 'ctrl-space:execute-silent(xdg-open {})'
---bind 'ctrl-r:reload(memoize.exe --reset fdfind --hidden)'
---bind 'ctrl-o:reload-sync(memoize.exe --reset fdfind --hidden)'
+--bind 'ctrl-r:reload(memoize --reset fdfind --hidden)'
+--bind 'ctrl-o:reload-sync(memoize --reset fdfind --hidden)'
 --bind 'ctrl-h:become(fz)'
 ```
