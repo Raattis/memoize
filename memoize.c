@@ -9,8 +9,7 @@
 // 2. `sh ./memoize.c`
 
 // Linux:
-// 1. Download and unzip a raylib release to this folder so that './raylib/lib/libraylib.a' is a valid relative path
-// 2. `sh ./memoize.c`
+// 1. `sh ./memoize.c`
 
 #include <assert.h>
 #include <dirent.h>
