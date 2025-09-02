@@ -62,12 +62,14 @@ void hash_command(const char *command, char *hash_output) {
 
 void execute_command(const char *command, const char *cache_file) {
 	char wip_file[2048];
+
 	strict_snprintf(wip_file, sizeof(wip_file), "%s.wip", cache_file);
 	if (access(wip_file, F_OK) != -1)
 	{
 		// If a wip file with this name already existed (from a previous run) delete it
 		remove(wip_file);
 	}
+
 
 	FILE *file = fopen(wip_file, "w");
 	if (!file) {
@@ -131,7 +133,6 @@ Usage: %s <command>\n\
 			mkdir(cache_path, 0700);
 		}
 	}
-
 	char cache_file[2048];
 	strict_snprintf(cache_file, sizeof(cache_file), "%s/%s.txt", cache_path, command_hash);
 
@@ -140,18 +141,34 @@ Usage: %s <command>\n\
 		// Force re-caching when "--reset" is defined
 		remove(cache_file);
 	}
-
 	if (access(cache_file, F_OK) != -1) {
 		// File cache file exists, read and print its content		
 		FILE *file = fopen(cache_file, "r");
 		if (file) {
 			char buffer[BUFFER_SIZE];
 			while (fgets(buffer, sizeof(buffer), file) != NULL) {
-				printf("%s", buffer);
+				fputs(buffer, stdout);
 			}
+			fflush(stdout);
 			fclose(file);
 		}
 	} else {
+
+		{
+			char log_path[2048];
+			const char *home_dir = getenv("HOME");
+			strict_snprintf(log_path, sizeof(log_path), "%s/.memoize/log.txt", home_dir);
+			printf("%s, ", log_path);
+			FILE *log = fopen(log_path, "a");
+			printf("%p\n", log);
+
+			char cwd[2048] = {0};
+			const char* _ = getcwd(cwd, sizeof(cwd));
+			fprintf(log, "%s - cwd:\"%s\", cmd:\"%s\"\n", cache_file, cwd, command_input);
+			fclose(log);
+		}
+
+
         // If not, run the command and cache the output
 		execute_command(command_input, cache_file);
 	}
